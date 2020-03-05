@@ -2,13 +2,29 @@
 
 The purpose of ***aws-dx-monitor*** is enabling  customers to monitor [AWS Direct Connect](https://aws.amazon.com/directconnect/) runtime configuration items with [Amazon CloudWatch](https://aws.amazon.com/cloudwatch/). The system is driven by [Amazon CloudWatch Events](http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) and [AWS Lambda](https://aws.amazon.com/lambda/).  
 
+## Quick Install (VMS)
+
+* Recommend to check the `Makefile` to confirm defaults and pahses before deploying
+* Assume valid AWS ENVs for target account:
+
+~~~sh
+$ git clone https://github.com/Versent/aws-dx-monitor
+cd aws-dx-monitor
+make
+~~~
+
+
 ## How it works
 
 The following diagram expresses the high level system execution architecture.
 
 ![aws-dx-monitor design](./images/aws-dx-monitor.png)
 
-1.	CloudWatch Events schedules and invokes the Lambda function at five minute intervals.2.	The Lambda function interrogates the AWS Direct Connect service through Describe API calls for every configuration type that makes sense for its operational scope (for example, if you are a Service Provider, you may wish to describe the Interconnects). AWS Direct Connect responds with the JSON payloads for each Describe call.3.	After the Lambda function extracts the status from a given configuration item, it puts the data to a CloudWatch Custom Metric.  Each configuration item type should have its own dimension in order to easily identify what is being monitored.4.	Once the data has been settled in the custom CloudWatch metric, you can set alarms for it.  See the section on Status Levels for information on configuration item status levels.5.	Alarms may be triggered to notify an operator or administrator of a monitored status threshold.
+1.	CloudWatch Events schedules and invokes the Lambda function at five minute intervals.
+2.	The Lambda function interrogates the AWS Direct Connect service through Describe API calls for every configuration type that makes sense for its operational scope (for example, if you are a Service Provider, you may wish to describe the Interconnects). AWS Direct Connect responds with the JSON payloads for each Describe call.
+3.	After the Lambda function extracts the status from a given configuration item, it puts the data to a CloudWatch Custom Metric.  Each configuration item type should have its own dimension in order to easily identify what is being monitored.
+4.	Once the data has been settled in the custom CloudWatch metric, you can set alarms for it.  See the section on Status Levels for information on configuration item status levels.
+5.	Alarms may be triggered to notify an operator or administrator of a monitored status threshold.
 
 ## Installation
 
@@ -97,20 +113,63 @@ See the following sections for status levels on:
 
 ### Connections
 
-| Name        | API Status Value | Numeric Value ||:------------|:-----------------|:--------------|| Ordering    | ordering         | 1             || Requested   | requested        | 2             || Pending     | pending          | 3             || Available   | available        | 4             || Down        | down             | 5             || Deleting    | deleting         | 6             || Deleted     | deleted          | 7             || Rejected    | rejected         | 8             |### Interconnects
+| Name        | API Status Value | Numeric Value |
+|:------------|:-----------------|:--------------|
+| Ordering    | ordering         | 1             |
+| Requested   | requested        | 2             |
+| Pending     | pending          | 3             |
+| Available   | available        | 4             |
+| Down        | down             | 5             |
+| Deleting    | deleting         | 6             |
+| Deleted     | deleted          | 7             |
+| Rejected    | rejected         | 8             |
 
-| Name        | API Status Value | Numeric Value ||:------------|:-----------------|:--------------|| Requested   | requested        | 1             || Pending     | pending          | 2             || Available   | available        | 3             || Down        | down             | 4             || Deleting    | deleting         | 5             || Deleted     | deleted          | 6             |### Connections on Interconnects
+### Interconnects
 
-| Name        | API Status Value | Numeric Value ||:------------|:-----------------|:--------------|
-| Ordering    | ordering         | 1             || Requested   | requested        | 2             || Pending     | pending          | 3             || Available   | available        | 4             || Down        | down             | 5             || Deleted     | deleted          | 6             || Rejected    | rejected         | 7             |
+| Name        | API Status Value | Numeric Value |
+|:------------|:-----------------|:--------------|
+| Requested   | requested        | 1             |
+| Pending     | pending          | 2             |
+| Available   | available        | 3             |
+| Down        | down             | 4             |
+| Deleting    | deleting         | 5             |
+| Deleted     | deleted          | 6             |
+
+### Connections on Interconnects
+
+| Name        | API Status Value | Numeric Value |
+|:------------|:-----------------|:--------------|
+| Ordering    | ordering         | 1             |
+| Requested   | requested        | 2             |
+| Pending     | pending          | 3             |
+| Available   | available        | 4             |
+| Down        | down             | 5             |
+| Deleted     | deleted          | 6             |
+| Rejected    | rejected         | 7             |
+
 ### Virtual Interfaces
 
-| Name        | API Status Value | Numeric Value ||:------------|:-----------------|:--------------|
-| Confirming  | confirming       | 1             || Verifying   | verifying        | 2             || Pending     | pending          | 3             || Available   | available        | 4             || Down        | down             | 5             || Deleting    | deleting         | 6             || Deleted     | deleted          | 7             || Rejected    | rejected         | 8             |
+| Name        | API Status Value | Numeric Value |
+|:------------|:-----------------|:--------------|
+| Confirming  | confirming       | 1             |
+| Verifying   | verifying        | 2             |
+| Pending     | pending          | 3             |
+| Available   | available        | 4             |
+| Down        | down             | 5             |
+| Deleting    | deleting         | 6             |
+| Deleted     | deleted          | 7             |
+| Rejected    | rejected         | 8             |
 
 ### Virtual Gateways
 
-| Name        | API Status Value | Numeric Value ||:------------|:-----------------|:--------------|| Pending     | pending          | 1             || Available   | available        | 2             || Deleting    | deleting         | 3             || Deleted     | deleted          | 4             |# <a name="lambda-execution-policy"></a>Lambda Execution Policy
+| Name        | API Status Value | Numeric Value |
+|:------------|:-----------------|:--------------|
+| Pending     | pending          | 1             |
+| Available   | available        | 2             |
+| Deleting    | deleting         | 3             |
+| Deleted     | deleted          | 4             |
+
+# <a name="lambda-execution-policy"></a>Lambda Execution Policy
 
 This policy allows:
 
@@ -119,4 +178,36 @@ This policy allows:
 - Log write access to CloudWatch Logs for Lambda logging.
 
 ~~~json
-{    "Version": "2012-10-17",    "Statement": [        {            "Effect": "Allow",            "Action": [                "directconnect:DescribeConnections",                "directconnect:DescribeConnectionsOnInterconnect",                "directconnect:DescribeInterconnects",                "directconnect:DescribeVirtualGateways",                "directconnect:DescribeVirtualInterfaces"            ],            "Resource": "*"        },        {            "Effect": "Allow",            "Action": [                "cloudwatch:PutMetricData"            ],            "Resource": "*"        },        {            "Effect": "Allow",            "Action": [                "logs:CreateLogGroup",                "logs:CreateLogStream",                "logs:PutLogEvents"            ],            "Resource": "arn:aws:logs:*:*:*"        }    ]}~~~
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "directconnect:DescribeConnections",
+                "directconnect:DescribeConnectionsOnInterconnect",
+                "directconnect:DescribeInterconnects",
+                "directconnect:DescribeVirtualGateways",
+                "directconnect:DescribeVirtualInterfaces"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:PutMetricData"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:*:*:*"
+        }
+    ]
+}
+~~~
