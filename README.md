@@ -4,7 +4,7 @@ The purpose of ***aws-dx-monitor*** is enabling  customers to monitor [AWS Direc
 
 ## Quick Install (VMS)
 
-* Recommend to check the `Makefile` to confirm defaults and pahses before deploying
+* Recommend to check the `Makefile` to confirm defaults and phases before deploying
 * Assume valid AWS ENVs for target account:
 
 ~~~sh
