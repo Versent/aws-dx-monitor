@@ -1,8 +1,8 @@
 
 # Tag Variables for local run
-STACK_NAME ?= "vms-hosted-dx-monitor"
-OWNER ?= "MLCLENCDEV"
-COSTCENTRE ?= "MLCLENCDEV"
+STACK_NAME ?= "hosted-dx-monitor"
+OWNER ?= "VMS"
+COSTCENTRE ?= ""
 PROJECT ?= "ENC"
 ENVIRONMENT ?= "development"
 CONFIDENTIALITY ?= "nonsensitive"

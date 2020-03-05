@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: Test aws dx monitor
+Description: AWS DirectConnect Monitor for Hosted VIFs
 
 Parameters:
   LambdaRuntime:
@@ -51,11 +51,11 @@ Resources:
             - 'directconnect:DescribeInterconnects'
             - 'directconnect:DescribeVirtualGateways'
             - 'directconnect:DescribeVirtualInterfaces'
-          Resource: '*' #TODO Tighten
+          Resource: '*'
         - Effect: Allow
           Action:
             - 'cloudwatch:PutMetricData'
-          Resource: '*' #TODO Tighten
+          Resource: '*'
         - Effect: Allow
           Action:
             - 'logs:CreateLogGroup'
@@ -100,7 +100,7 @@ Resources:
       Environment:
         Variables:
           # 10 DEBUG,20 INFO, 30 WARNING, 40 ERROR
-          LOG_LEVEL: 20 
+          LOG_LEVEL: 30 
           ENV: !Ref Environment
       Role: !Sub ${LambdaRole.Arn}
       Events: 
@@ -111,7 +111,7 @@ Resources:
 
       Tags:
         Name: !Sub "${Environment}-dx-monitor"
-        Owner: mninoruiz
+        Owner: versent
         Service: lambda
         Role: monitoring
         Application: monitoring
