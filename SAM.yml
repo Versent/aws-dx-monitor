@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: AWS DirectConnect Monitor for Hosted VIFs
+
+Parameters:
+  LambdaRuntime:
+    Type: String
+    Default: python2.7
+  LambdaTimeout:
+    Type: Number
+    Default: 100
+  Environment:
+    Description: development,production
+    Type: String
+    Default: development
+  HandlerName:
+    Description: handler name
+    Type: String
+    Default: "aws-dx-monitor.lambda_handler"
+
+Resources:
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+  LambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+        - Ref: LambdaRole
+      PolicyName: !Sub "${AWS::StackName}-LambdaPolicy"
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+            - 'directconnect:DescribeConnections'
+            - 'directconnect:DescribeConnectionsOnInterconnect'
+            - 'directconnect:DescribeInterconnects'
+            - 'directconnect:DescribeVirtualGateways'
+            - 'directconnect:DescribeVirtualInterfaces'
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - 'cloudwatch:PutMetricData'
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+          Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+  
+  LambdaKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Enabled: true
+      Description: "The Key used to encrypt lambda's environment vars"
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+
+  LambdaKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${Environment}-dx-monitor"
+      TargetKeyId:
+        Ref: LambdaKMSKey
+
+  LambdaFunction:
+    Type: 'AWS::Serverless::Function'
+    Description: Custom AWS DX Monitor
+    DependsOn:
+      - LambdaPolicy
+      - LambdaRole
+      - LambdaKMSKeyAlias
+    Properties:
+      Handler: !Ref HandlerName
+      Runtime: python2.7
+      CodeUri: "./handler.zip"
+      Timeout: 300
+      Environment:
+        Variables:
+          # 10 DEBUG,20 INFO, 30 WARNING, 40 ERROR
+          LOG_LEVEL: 30 
+          ENV: !Ref Environment
+      Role: !Sub ${LambdaRole.Arn}
+      Events: 
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+
+      Tags:
+        Name: !Sub "${Environment}-dx-monitor"
+        Owner: versent
+        Service: lambda
+        Role: monitoring
+        Application: monitoring
