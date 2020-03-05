@@ -28,7 +28,7 @@ The following diagram expresses the high level system execution architecture.
 
 ## Installation
 
-Use the following steps to build and deploy the system.  It is strongly suggested that you review the security policies prior to deploying to your environment. 
+The installation process is done via makefile. The old manual steps are preserved for posterity:
 
 ### 1. Prerequisites
 
